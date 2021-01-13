@@ -5,9 +5,10 @@ option(BUILD_VGICP_CUDA "Build GPU-powered VGICP" OFF)
 option(BUILD_apps "Build application programs" ON)
 option(BUILD_test "Build test programs" OFF)
 
-add_definitions(-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
-set(CMAKE_C_FLAGS "-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
-set(CMAKE_CXX_FLAGS "-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
+# add_definitions(-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
+# set(CMAKE_C_FLAGS "-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAG} -std=c++11 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAG} -std=c++11 ")
 
 set(CMAKE_BUILD_TYPE "Release")
 
@@ -47,6 +48,7 @@ add_library(fast_gicp
   src/fast_gicp/gicp/fast_gicp_st.cpp
   src/fast_gicp/gicp/fast_vgicp.cpp
 )
+
 target_link_libraries(fast_gicp
   ${PCL_LIBRARIES}
 )
@@ -55,14 +57,28 @@ target_include_directories(fast_gicp PUBLIC
   ${PCL_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
 )
+add_library(ndt_omp
+  src/pclomp/voxel_grid_covariance_omp.cpp
+  src/pclomp/ndt_omp.cpp
+  src/pclomp/gicp_omp.cpp
+)
+target_link_libraries(ndt_omp
+  ${PCL_LIBRARIES}
+)
+target_include_directories(ndt_omp PUBLIC
+  include
+  ${PCL_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
+)
 
 ### APPS ###
 if(BUILD_apps)
   add_executable(gicp_align src/align.cpp)
-  add_dependencies(gicp_align fast_gicp)
+  add_dependencies(gicp_align fast_gicp ndt_omp)
   target_link_libraries(gicp_align
     ${PCL_LIBRARIES}
     fast_gicp
+    ndt_omp
   )
 
   add_executable(gicp_kitti src/kitti.cpp)
@@ -70,6 +86,7 @@ if(BUILD_apps)
   target_link_libraries(gicp_kitti
     ${PCL_LIBRARIES}
     fast_gicp
+    ndt_omp
   )
 endif()
 
